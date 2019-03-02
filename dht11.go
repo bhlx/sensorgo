@@ -30,7 +30,7 @@ func ReadDHT11() {
 }
 
 func storeInFile(bytes []byte) {
-	if err := ioutil.WriteFile("tmp/dht", bytes, 0644); err != nil {
+	if err := ioutil.WriteFile("/tmp/dht", bytes, 0644); err != nil {
 		log.Println("Could not store new data to file")
 	}
 }

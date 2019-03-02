@@ -80,19 +80,24 @@ func QueueOperation(w http.ResponseWriter, req *http.Request) {
 	OpQueue <- op
 }
 
+type DHTResponse struct {
+	raw string
+}
+
 func GetLastDHT11State(w http.ResponseWriter, req *http.Request) {
 
 	// Read the data of the file tmp/dht
 
-	dat, err := ioutil.ReadFile("tmp/dht")
+	dat, err := ioutil.ReadFile("/tmp/dht")
 	if err != nil {
 		http.Error(w, "Failed to read dht file", 500)
 		return
 	}
 
-	raw := string(dat)
+	log.Println("Read from file:", string(dat))
+	res := DHTResponse{raw: string(dat)}
 
-	if err := json.NewEncoder(w).Encode(struct{ rawMsg string }{raw}); err != nil {
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		log.Println("Failed to encode raw dht11state", err)
 	}
 }
