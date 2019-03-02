@@ -5,11 +5,14 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"time"
 )
 
 var OpQueue chan Operation
 
 var OpCounter int
+
+var CurrentDHT11State DHT11State
 
 func main() {
 
@@ -19,9 +22,25 @@ func main() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/gpio/push-operation", QueueOperation).Methods("PUT")
+	router.HandleFunc("/api/gpio/dht11", GetLastDHT11State).Methods("GET")
 
-	// Start the worker
+	// Start the operation worker
 	go opWorker()
+
+	// Start a worker, that reads the dht11 in intervall
+	ticker := time.NewTicker(20 * time.Second)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				ReadDHT11()
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -60,6 +79,12 @@ func QueueOperation(w http.ResponseWriter, req *http.Request) {
 
 	// Enqueue the op
 	OpQueue <- op
+}
+
+func GetLastDHT11State(w http.ResponseWriter, req *http.Request) {
+	if err := json.NewEncoder(w).Encode(CurrentDHT11State); err != nil {
+		log.Println("Failed to encode current dht11state", err)
+	}
 }
 
 // OP Worker
