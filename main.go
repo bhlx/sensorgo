@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -11,8 +12,6 @@ import (
 var OpQueue chan Operation
 
 var OpCounter int
-
-var CurrentDHT11State DHT11State
 
 func main() {
 
@@ -27,8 +26,8 @@ func main() {
 	// Start the operation worker
 	go opWorker()
 
-	// Start a worker, that reads the dht11 in intervall
-	ticker := time.NewTicker(20 * time.Second)
+	// Start a worker, that reads the dht11 in interval
+	ticker := time.NewTicker(60 * time.Second)
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -82,8 +81,19 @@ func QueueOperation(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetLastDHT11State(w http.ResponseWriter, req *http.Request) {
-	if err := json.NewEncoder(w).Encode(CurrentDHT11State); err != nil {
-		log.Println("Failed to encode current dht11state", err)
+
+	// Read the data of the file tmp/dht
+
+	dat, err := ioutil.ReadFile("tmp/dht")
+	if err != nil {
+		http.Error(w, "Failed to read dht file", 500)
+		return
+	}
+
+	raw := string(dat)
+
+	if err := json.NewEncoder(w).Encode(struct{ rawMsg string }{raw}); err != nil {
+		log.Println("Failed to encode raw dht11state", err)
 	}
 }
 

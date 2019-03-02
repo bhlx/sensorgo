@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/d2r2/go-dht"
+	"io/ioutil"
 	"log"
 )
 
@@ -23,9 +25,12 @@ func ReadDHT11() {
 	log.Printf("Read DHT11: Temperature = %v*C, Humidity = %v%% (retried %d times)\n",
 		temperature, humidity, retried)
 
-	CurrentDHT11State = DHT11State{
-		temperature: temperature,
-		humidity:    humidity,
-	}
+	s := fmt.Sprintf("Temperature = %v*C, Humidity = %v%%", temperature, humidity)
+	storeInFile([]byte(s))
+}
 
+func storeInFile(bytes []byte) {
+	if err := ioutil.WriteFile("tmp/dht", bytes, 0644); err != nil {
+		log.Println("Could not store new data to file")
+	}
 }
